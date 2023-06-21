@@ -1,4 +1,4 @@
-import axios, { Axios, AxiosError, AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import { Activity } from "../models/Activity";
 import { toast } from "react-toastify";
 import { router } from "../router/Routes";

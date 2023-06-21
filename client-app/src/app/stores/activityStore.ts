@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import { Activity } from "../models/Activity";
 import agent from "../api/agent";
 import { v4 as uuid } from 'uuid';
+import { format } from "date-fns";
 
 export default class ActivityStore {
 
@@ -19,14 +20,14 @@ export default class ActivityStore {
 
     get activitiesByDate() {
         return Array.from(this.activityRegistry.values()).sort((a, b) =>
-            Date.parse(a.date) - Date.parse(b.date));
+            a.date!.getTime() - b.date!.getTime());
     }
 
     get groupedActivities() {
         return Object.entries(
             this.activitiesByDate.reduce((activities, activity) => {
-                const date = activity.date;
-                
+                const date = format(activity.date!, 'dd MMM yyyy')
+
                 activities[date] = activities[date] ? [...activities[date], activity] : [activity];
 
                 return activities;
@@ -40,7 +41,6 @@ export default class ActivityStore {
             const activities = await agent.Activities.list();
 
             activities.forEach(activity => {
-                activity.date = activity.date.split('T')[0];
                 this.setActivity(activity);
 
             })
@@ -79,7 +79,7 @@ export default class ActivityStore {
     }
 
     private setActivity = (activity: Activity) => {
-        activity.date = activity.date.split('T')[0];
+        activity.date = new Date(activity.date!);
         this.activityRegistry.set(activity.id, activity);
     }
 
@@ -114,7 +114,6 @@ export default class ActivityStore {
             })
 
         }
-
     }
 
     updateActivity = async (activity: Activity) => {
@@ -143,13 +142,13 @@ export default class ActivityStore {
         this.loading = true;
 
         try {
-            await agent.Activities.delete(id); {
-                runInAction(() => {
-                    this.activityRegistry.delete(id);
 
-                    this.loading = false;
-                })
-            }
+            await agent.Activities.delete(id);
+            runInAction(() => {
+                this.activityRegistry.delete(id);
+                this.loading = false;
+            })
+
         } catch (error) {
 
             console.log(error);
